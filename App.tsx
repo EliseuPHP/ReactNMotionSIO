@@ -1,9 +1,4 @@
 /**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * Generated with the TypeScript template
- * https://github.com/react-native-community/react-native-template-typescript
  *
  * @format
  */
@@ -19,6 +14,7 @@ import {
   View,
   TextInput,
   Pressable,
+  ToastAndroid,
 } from 'react-native';
 
 import {
@@ -43,7 +39,7 @@ import io from 'socket.io-client';
 
 setUpdateIntervalForType(SensorTypes.accelerometer, 250); // defaults to 100ms
 setUpdateIntervalForType(SensorTypes.magnetometer, 250); // defaults to 100ms
-setUpdateIntervalForType(SensorTypes.gyroscope, 50); // defaults to 100ms
+setUpdateIntervalForType(SensorTypes.gyroscope, 25); // defaults to 100ms
 
 const Section: React.FC<{
   title: string;
@@ -80,6 +76,9 @@ const App = () => {
     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
   };
 
+  const [text, onChangeText] = React.useState('');
+  const [connectionText, setConnectionText] = React.useState('Connect!!');
+
   let motionObject = {
     Accelerometer: {
       x: 0.0,
@@ -100,6 +99,7 @@ const App = () => {
 
   // Live Values
   const [motionState, motionChange] = useState(motionObject);
+  const [socketError, setSocketError] = useState('No Error');
 
   // Creating Socket Connection
   const PORT = '3001';
@@ -111,25 +111,37 @@ const App = () => {
 
   function socketConnect() {
     socket.connect();
-    socket.on('connect', () => {
-      console.log('Socket ID: ' + socket.id);
-    });
   }
 
   function socketDisconnect() {
     socket.disconnect();
-    socket.on('disconnect', data => {
-      console.log('Socket Disconnected: ' + data);
-    });
   }
+
+  socket.io.on('error', error => {
+    setSocketError(error.toString());
+    showToastWithGravityAndOffset(error.toString());
+  });
 
   socket.on('connect', () => {
     console.log('Socket Connected: ' + socket.connected);
+    console.log('Socket ID: ' + socket.id);
+    setConnectionText('Disconnect :(');
   });
 
   socket.on('disconnect', data => {
     console.log('Socket Disconnected: ' + data);
+    setConnectionText('Connect!!');
   });
+
+  const showToastWithGravityAndOffset = (text: string) => {
+    ToastAndroid.showWithGravityAndOffset(
+      text,
+      ToastAndroid.LONG,
+      ToastAndroid.BOTTOM,
+      25,
+      50,
+    );
+  };
 
   let motionString = '';
 
@@ -157,19 +169,16 @@ const App = () => {
       motionObject.Gyroscope.z = x.z;
       // console.log(motionObject.Gyroscope);
       updateMotion();
-      if ((x.x != 0.0 || x.y != 0.0 || x.z != 0.0) && socket.connected) {
-        socket.emit('message', motionString);
-      }
+      // if ((x.x != 0.0 || x.y != 0.0 || x.z != 0.0) && socket.connected) {
+      socket.emit('message', motionString);
+      // }
     },
   });
 
   function updateMotion() {
-    motionString = JSON.stringify(motionObject).replace(/"/g, "'");
-    motionChange(motionObject);
+    motionString = JSON.stringify(motionObject.Gyroscope).replace(/"/g, "'");
+    // motionChange(motionObject);
   }
-
-  const [text, onChangeText] = React.useState('');
-  const [connectionText, setConnectionText] = React.useState('Connect!!');
 
   return (
     <SafeAreaView style={backgroundStyle}>
@@ -197,16 +206,15 @@ const App = () => {
           <Pressable
             style={styles.button}
             onPress={() => {
-              IPAdress = text + ':' + PORT;
+              // IPAdress = text + ':' + PORT;
               console.log('butao');
+              showToastWithGravityAndOffset('butao');
               if (socket.disconnected) {
                 console.log('Trying to Connect to: ' + IPAdress);
                 socketConnect();
-                setConnectionText('Disconnect :(');
               } else {
                 console.log('Trying to Disconnect from: ' + IPAdress);
                 socketDisconnect();
-                setConnectionText('Connect!!');
               }
             }}>
             <Text>{connectionText}</Text>
@@ -217,11 +225,14 @@ const App = () => {
           <Pressable
             style={styles.button}
             onPress={() => {
-              socket.emit('message', motionString),
-                console.log('Message Sent: ', motionString);
+              socket.emit('message', motionString);
+              console.log('Message Sent: ', motionString);
             }}>
             <Text style={styles.highlight}>Emit!!</Text>
           </Pressable>
+          <Section title="Socket IO Error Log">
+            <Text>{socketError}</Text>
+          </Section>
           <Section title="Accelerometer">
             <Text>
               Y: {motionState.Accelerometer.y}
