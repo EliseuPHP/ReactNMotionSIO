@@ -1,3 +1,4 @@
+/* eslint-disable react-native/no-inline-styles */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  *
@@ -21,19 +22,11 @@ import {
 import Ionicon from 'react-native-vector-icons/Ionicons';
 import RNRestart from 'react-native-restart';
 
-import {
-  Colors,
-  /*DebugInstructions,*/
-  Header,
-  LearnMoreLinks,
-  /*ReloadInstructions,*/
-} from 'react-native/Libraries/NewAppScreen';
+import {Colors} from 'react-native/Libraries/NewAppScreen';
 
 //Motion Sensor
 import {
-  // accelerometer,
   gyroscope,
-  // magnetometer,
   setUpdateIntervalForType,
   SensorTypes,
 } from 'react-native-sensors';
@@ -82,13 +75,11 @@ const App = () => {
 
   const [canEmmit, setCanEmmit] = useState(false);
   const [sideSelect, setSideSelect] = useState(false);
-  const [status, setStatus] = useState('wait');
+  const [buttonSelected, setButtonSelected] = useState(true);
   const [text, onChangeText] = React.useState('');
   const [connectionText, setConnectionText] = React.useState('Connect!!');
   let phoneRotation = '0';
-  // let gyroString = '';
   const [socketError, setSocketError] = useState('No Error');
-  const sub = useRef();
 
   let motionGyro = {
     x: 0.0,
@@ -96,8 +87,6 @@ const App = () => {
     y: 0.0,
     phoneRotation: phoneRotation,
   };
-
-  // Live Values
 
   // Creating Socket Connection
   const PORT = '3001';
@@ -112,6 +101,7 @@ const App = () => {
     socket.on('connect', () => {
       setSideSelect(true);
       console.log('Socket Connected: ' + socket.connected);
+      setSocketError('Socket Connected: ' + socket.connected);
       console.log('Socket ID: ' + socket.id);
       setConnectionText('Disconnect :(');
       subscriptionGyroAsync();
@@ -162,17 +152,6 @@ const App = () => {
   async function emitMessage(gyroString: string) {
     socket.emit('message', gyroString);
   }
-  // const subscriptionGyro = gyroscope.subscribe({
-  //   next: x => {
-  //     motionGyro.x = x.x;
-  //     motionGyro.y = x.y;
-  //     motionGyro.z = x.z;
-  //     // motionGyro.phoneRotation = phoneRotation;
-  //     let gyroString = updateMotion(motionGyro);
-  //     console.log(gyroString);
-  //     socket.emit('message', gyroString);
-  //   },
-  // });
 
   function updateMotion(_object: {
     x: number;
@@ -213,6 +192,7 @@ const App = () => {
           />
           <Pressable
             style={styles.button}
+            disabled={sideSelect}
             onPress={() => {
               // IPAdress = text + ':' + PORT;
               console.log('butao');
@@ -224,11 +204,11 @@ const App = () => {
           </Pressable>
           <Pressable
             style={styles.button}
+            disabled={!sideSelect}
             onPress={() => {
               socket.emit('quitpls');
               socketDisconnect();
               // subscriptionGyro.unsubscribe();
-
               setCanEmmit(!canEmmit);
               console.log(canEmmit);
             }}>
@@ -237,16 +217,24 @@ const App = () => {
             </Text>
           </Pressable>
           <Section title="Cellphone position">
-            <Text>Choose the position which your cell phone is mounted</Text>
+            <Text>
+              Please, before connecting, choose the position which your cell
+              phone is mounted
+            </Text>
           </Section>
           <View style={styles.row}>
             <View>
               <Pressable
+                key="twos"
                 disabled={sideSelect}
-                style={styles.sButton}
+                style={[
+                  styles.sButton,
+                  {backgroundColor: buttonSelected ? 'coral' : '#2196F3'},
+                ]}
                 onPress={() => {
-                  showToastWithGravityAndOffset(phoneRotation);
+                  setButtonSelected(true);
                   phoneRotation = '270';
+                  // showToastWithGravityAndOffset(phoneRotation);
                 }}>
                 <Ionicon
                   name="phone-landscape-outline"
@@ -259,33 +247,23 @@ const App = () => {
             <View>
               <Pressable
                 disabled={sideSelect}
-                style={styles.sButton}
+                style={[
+                  styles.sButton,
+                  {backgroundColor: buttonSelected ? '#2196F3' : 'coral'},
+                ]}
                 onPress={() => {
-                  showToastWithGravityAndOffset(phoneRotation);
+                  setButtonSelected(false);
                   phoneRotation = '0';
+                  // showToastWithGravityAndOffset(phoneRotation);
                 }}>
                 <Ionicon name="phone-portrait-outline" color="#FFF" size={50} />
                 <Text style={styles.textButton}>Portrait</Text>
               </Pressable>
             </View>
           </View>
-          <Section title="Socket IO Error Log">
+          <Section title="Socket IO Log">
             <Text>{socketError}</Text>
           </Section>
-          {/* <Section title="Gyroscope">
-            <Text>
-              Y: {motionGyro.y}
-              {'\n'}
-            </Text>
-            <Text>
-              X: {motionGyro.x}
-              {'\n'}
-            </Text>
-            <Text>
-              Z: {motionGyro.z}
-              {'\n'}
-            </Text>
-          </Section> */}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -339,6 +317,9 @@ const styles = StyleSheet.create({
     marginTop: 8,
     backgroundColor: '#2196F3',
     borderColor: '#000000',
+  },
+  selected: {
+    backgroundColor: 'coral',
   },
   textButton: {
     color: '#FFFFFF',
