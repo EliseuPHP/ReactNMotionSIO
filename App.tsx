@@ -5,7 +5,7 @@
  * @format
  */
 
-import React, {useRef, useState} from 'react';
+import React, {useState} from 'react';
 import {
   SafeAreaView,
   ScrollView,
@@ -36,7 +36,7 @@ import io from 'socket.io-client';
 
 setUpdateIntervalForType(SensorTypes.accelerometer, 250); // defaults to 100ms
 setUpdateIntervalForType(SensorTypes.magnetometer, 250); // defaults to 100ms
-setUpdateIntervalForType(SensorTypes.gyroscope, 250); // defaults to 100ms
+setUpdateIntervalForType(SensorTypes.gyroscope, 25); // defaults to 100ms
 
 const Section: React.FC<{
   title: string;
@@ -77,8 +77,7 @@ const App = () => {
   const [sideSelect, setSideSelect] = useState(false);
   const [buttonSelected, setButtonSelected] = useState(true);
   const [text, onChangeText] = React.useState('');
-  const [connectionText, setConnectionText] = React.useState('Connect!!');
-  let phoneRotation = '0';
+  let phoneRotation = '270';
   const [socketError, setSocketError] = useState('No Error');
 
   let motionGyro = {
@@ -103,7 +102,6 @@ const App = () => {
       console.log('Socket Connected: ' + socket.connected);
       setSocketError('Socket Connected: ' + socket.connected);
       console.log('Socket ID: ' + socket.id);
-      setConnectionText('Disconnect :(');
       subscriptionGyroAsync();
     });
   }
@@ -113,7 +111,6 @@ const App = () => {
     socket.on('disconnect', data => {
       setSideSelect(false);
       console.log('Socket Disconnected: ' + data);
-      setConnectionText('Connect!!');
     });
     RNRestart.Restart();
   }
